@@ -1,0 +1,40 @@
+version: '2'
+services:
+    wordpress:
+        depends_on:
+            - mysql
+        image: wordpress:latest
+        restart: always
+        volumes:
+            - /opt/wordpress/code:/var/www/html
+        environment:
+            WORDPRESS_DB_HOST: mysql
+            WORDPRESS_DB_PASSWORD: pangbobi
+        ports:
+            - 66:80
+        networks:
+            - back
+    mysql:
+        image: mysql:5.7
+        volumes:
+            - /opt/wordpress/mysql:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: pangbobi
+        ports:
+            - 3305:3305
+        networks:
+            - back
+    phpmyadmin:
+        depends_on:
+            - mysql
+        image: phpmyadmin/phpmyadmin
+        restart: always
+        ports:
+            - 605:80
+        environment:
+            PMA_HOST: mysql
+            MYSQL_ROOT_PASSWORD: pangbobi
+        networks:
+            - back
+networks:
+    back:
