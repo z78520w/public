@@ -11,7 +11,7 @@ services:
             WORDPRESS_DB_HOST: mysql
             WORDPRESS_DB_PASSWORD: pangbobi
         ports:
-            - 66:80
+            - de_port:80
         networks:
             - back
     mysql:
