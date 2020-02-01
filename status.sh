@@ -1,3 +1,4 @@
-7.2.4
+7.2.5
 authorize
+free
 delete
