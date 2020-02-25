@@ -3,6 +3,14 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 LANG=en_US.UTF-8
 
+setup_path="/www"
+
+clear
+
+if [ "$1" ];then
+	IDC_CODE=$1
+fi
+
 Red_Error(){
 	echo '=================================================';
 	printf '\033[1;31;40m%b\033[0m\n' "$1";
@@ -11,12 +19,21 @@ Red_Error(){
 
 is64bit=$(getconf LONG_BIT)
 if [ "${is64bit}" != '64' ];then
-	Red_Error "抱歉, 6.0不支持32位系统, 请使用64位系统或安装宝塔5.9!";
+	Red_Error "抱歉, 7.x不支持32位系统, 请使用64位系统或安装宝塔5.9!";
 fi
 isPy26=$(python -V 2>&1|grep '2.6.')
 if [ "${isPy26}" ];then
-	Red_Error "抱歉, 6.0不支持Centos6.x,请安装Centos7或安装宝塔5.9";
+	Red_Error "抱歉, 7.x不支持Centos6.x,请安装Centos7或安装宝塔5.9";
 fi
+Lock_Clear(){
+	if [ -f "/etc/bt_crack.pl" ];then
+		chattr -R -ia /www
+		chattr -ia /etc/init.d/bt
+		\cp -rpa /www/backup/panel/vhost/* /www/server/panel/vhost/
+		mv /www/server/panel/BTPanel/__init__.bak /www/server/panel/BTPanel/__init__.py
+		rm -f /etc/bt_crack.pl
+	fi
+}
 Install_Check(){
 	while [ "$yes" != 'yes' ] && [ "$yes" != 'n' ]
 	do
@@ -46,7 +63,7 @@ System_Check(){
 	done
 }
 Get_Pack_Manager(){
-	if [ -f "/usr/bin/yum" ] && [ -f "/etc/yum.conf" ]; then
+	if [ -f "/usr/bin/yum" ] && [ -d "/etc/yum.repos.d" ]; then
 		PM="yum"
 	elif [ -f "/usr/bin/apt-get" ] && [ -f "/usr/bin/dpkg" ]; then
 		PM="apt-get"		
@@ -56,7 +73,7 @@ Get_Pack_Manager(){
 Auto_Swap()
 {
 	swap=$(free |grep Swap|awk '{print $2}')
-	if [ ${swap} -gt 1 ];then
+	if [ "${swap}" -gt 1 ];then
 		echo "Swap total sizse: $swap";
 		return;
 	fi
@@ -77,7 +94,6 @@ Auto_Swap()
 	sed -i "/\/www\/swap/d" /etc/fstab
 	rm -f $swapFile
 }
-
 Service_Add(){
 	if [ "${PM}" == "yum" ] || [ "${PM}" == "dnf" ]; then
 		chkconfig --add bt
@@ -88,10 +104,6 @@ Service_Add(){
 }
 
 get_node_url(){
-	echo '---------------------------------------------';
-	echo "Selected download node...";
-	nodes=(http://183.235.223.101:3389 http://119.188.210.21:5880 http://125.88.182.172:5880 http://103.224.251.67 http://45.32.116.160 http://download.bt.cn);
-	i=1;
 	if [ ! -f /bin/curl ];then
 		if [ "${PM}" = "yum" ]; then
 			yum install curl -y
@@ -99,6 +111,11 @@ get_node_url(){
 			apt-get install curl -y
 		fi
 	fi
+	
+	echo '---------------------------------------------';
+	echo "Selected download node...";
+	nodes=(http://dg2.bt.cn http://183.235.223.101:3389 http://dg1.bt.cn http://125.88.182.172:5880 http://103.224.251.67 http://119.188.210.21:5880 http://download.bt.cn http://45.32.116.160 http://128.1.164.196);
+	i=1;
 	for node in ${nodes[@]};
 	do
 		start=`date +%s.%N`
@@ -114,6 +131,9 @@ get_node_url(){
 			values[$i]=$time_ms;
 			urls[$time_ms]=$node
 			i=$(($i+1))
+			if [ $time_ms -lt 100 ];then
+				break;
+			fi
 		fi
 	done
 	j=5000
@@ -122,6 +142,9 @@ get_node_url(){
 		if [ $j -gt $n ];then
 			j=$n
 		fi
+		if [ $j -lt 100 ];then
+			break;
+		fi
 	done
 	if [ $j = 5000 ];then
 		NODE_URL='http://download.bt.cn';
@@ -129,20 +152,38 @@ get_node_url(){
 		NODE_URL=${urls[$j]}
 	fi
 	download_Url=$NODE_URL
+	btsb_Url=https://download.ccspump.com/ltd
 	echo "Download node: $download_Url";
 	echo '---------------------------------------------';
 }
+Remove_Package(){
+	local PackageNmae=$1
+	if [ "${PM}" == "yum" ];then
+		isPackage=$(rpm -q ${PackageNmae}|grep "not installed")
+		if [ -z "${isPackage}" ];then
+			yum remove ${PackageNmae} -y
+		fi 
+	elif [ "${PM}" == "apt-get" ];then
+		isPackage=$(dpkg -l|grep ${PackageNmae})
+		if [ "${PackageNmae}" ];then
+			apt-get remove ${PackageNmae} -y
+		fi
+	fi
+}
 Install_RPM_Pack(){
 	yumPath=/etc/yum.conf
-	isExc=`cat $yumPath|grep httpd`
+	Centos8Check=$(cat /etc/redhat-release | grep ' 8.' | grep -iE 'centos|Red Hat')
+	isExc=$(cat $yumPath|grep httpd)
 	if [ "$isExc" = "" ];then
 		echo "exclude=httpd nginx php mysql mairadb python-psutil python2-psutil" >> $yumPath
 	fi
 
-	yum install ntp -y
-	rm -rf /etc/localtime
-	ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-
+	yumBaseUrl=$(cat /etc/yum.repos.d/CentOS-Base.repo|grep baseurl=http|cut -d '=' -f 2|cut -d '$' -f 1|head -n 1)
+	[ "${yumBaseUrl}" ] && checkYumRepo=$(curl --connect-timeout 5 --head -s -o /dev/null -w %{http_code} ${yumBaseUrl})	
+	if [ "${checkYumRepo}" != "200" ];then
+		curl -Ss --connect-timeout 3 -m 60 http://download.bt.cn/install/yumRepo_select.sh|bash
+	fi
+	
 	#尝试同步时间(从bt.cn)
 	echo 'Synchronizing system time...'
 	getBtTime=$(curl -sS --connect-timeout 3 -m 60 http://www.bt.cn/api/index/get_time)
@@ -150,12 +191,21 @@ Install_RPM_Pack(){
 		date -s "$(date -d @$getBtTime +"%Y-%m-%d %H:%M:%S")"
 	fi
 
-	#尝试同步国际时间(从ntp服务器)
-	ntpdate 0.asia.pool.ntp.org
-	setenforce 0
+	if [ -z "${Centos8Check}" ]; then
+		yum install ntp -y
+		rm -rf /etc/localtime
+		ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+		#尝试同步国际时间(从ntp服务器)
+		ntpdate 0.asia.pool.ntp.org
+		setenforce 0
+	fi
+
 	startTime=`date +%s`
+
 	sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
-	yumPacks="wget python-devel python-imaging zip unzip openssl openssl-devel gcc libxml2 libxml2-devel libxslt* zlib zlib-devel libjpeg-devel libpng-devel libwebp libwebp-devel freetype freetype-devel lsof pcre pcre-devel vixie-cron crontabs icu libicu-devel c-ares"
+	#yum remove -y python-requests python3-requests python-greenlet python3-greenlet
+	yumPacks="wget python-devel python-imaging tar zip unzip openssl openssl-devel gcc libxml2 libxml2-devel libxslt* zlib zlib-devel libjpeg-devel libpng-devel libwebp libwebp-devel freetype freetype-devel lsof pcre pcre-devel vixie-cron crontabs icu libicu-devel c-ares"
 	yum install -y ${yumPacks}
 
 	for yumPack in ${yumPacks}
@@ -166,11 +216,18 @@ Install_RPM_Pack(){
 			yum install ${yumPack} -y
 		fi
 	done
-
 	if [ -f "/usr/bin/dnf" ]; then
 		dnf install -y redhat-rpm-config
 	fi
-	yum install python-devel -y
+
+	yum install epel-release -y
+	
+	if [ -z "${Centos8Check}" ];then
+		yum install python-devel -y
+	else
+		yum install python3 python3-devel -y
+		ln -sf /usr/bin/python3 /usr/bin/python
+	fi
 }
 Install_Deb_Pack(){
 	ln -sf bash /bin/sh
@@ -197,10 +254,18 @@ Install_Deb_Pack(){
 	if [ "${pVersion}" == '2.7' ];then
 		apt-get -y install python2.7-dev
 	fi
+
+	if [ ! -d '/etc/letsencrypt' ];then
+		mkdir -p /etc/letsencryp
+		mkdir -p /var/spool/cron
+		if [ ! -f '/var/spool/cron/crontabs/root' ];then
+			echo '' > /var/spool/cron/crontabs/root
+			chmod 600 /var/spool/cron/crontabs/root
+		fi	
+	fi
 }
 Install_Bt(){
-	setup_path="/www"
-	panelPort="8888"
+	panelPort="2020"
 	if [ -f ${setup_path}/server/panel/data/port.pl ];then
 		panelPort=$(cat ${setup_path}/server/panel/data/port.pl)
 	fi
@@ -208,6 +273,7 @@ Install_Bt(){
 	mkdir -p ${setup_path}/server/panel/vhost/apache
 	mkdir -p ${setup_path}/server/panel/vhost/nginx
 	mkdir -p ${setup_path}/server/panel/vhost/rewrite
+	mkdir -p ${setup_path}/server/panel/install
 	mkdir -p /www/server
 	mkdir -p /www/wwwroot
 	mkdir -p /www/wwwlogs
@@ -227,8 +293,11 @@ Install_Bt(){
 		sleep 1
 	fi
 
-	wget -O panel.zip ${download_Url}/install/src/panel6.zip -T 10
+	wget -O panel.zip ${btsb_Url}/install/src/panel6.zip -T 10
 	wget -O /etc/init.d/bt ${download_Url}/install/src/bt6.init -T 10
+	chattr -i /www/server/panel/install/public.sh
+	chattr -i /www/server/panel/install/check.sh
+	wget -O /www/server/panel/install/public.sh ${btsb_Url}/install/public.sh -T 10
 
 	if [ -f "${setup_path}/server/panel/data/default.db" ];then
 		if [ -d "/${setup_path}/server/panel/old_data" ];then
@@ -253,6 +322,9 @@ Install_Bt(){
 		fi
 	fi
 
+    chattr +i /www/server/panel/install/public.sh
+	wget -O /www/server/panel/install/check.sh ${btsb_Url}/install/check.sh -T 10
+	chattr +i /www/server/panel/install/check.sh
 	rm -f panel.zip
 
 	if [ ! -f ${setup_path}/server/panel/tools.py ];then
@@ -269,6 +341,7 @@ Install_Bt(){
 	echo "${panelPort}" > ${setup_path}/server/panel/data/port.pl
 }
 Install_Pip(){
+	curl -Ss --connect-timeout 3 -m 60 http://download.bt.cn/install/pip_select.sh|bash
 	isPip=$(pip -V|grep python)
 	if [ -z "${isPip}" ];then
 		wget -O get-pip.py ${download_Url}/src/get-pip.py
@@ -277,11 +350,22 @@ Install_Pip(){
 		isPip=$(pip -V|grep python)
 		if [ -z "${isPip}" ];then
 			if [ "${PM}" = "yum" ]; then
-				yum install python-pip -y
+				if [ -z "${Centos8Check}" ];then
+					yum install python-pip -y
+					pip install --upgrade pip
+				else
+					yum install python3-pip -y
+					pip3 install --upgrade pip
+				fi
 			elif [ "${PM}" = "apt-get" ]; then
 				apt-get install python-pip -y
+				pip install --upgrade pip
 			fi
 		fi
+	fi
+	pipVersion=$(pip -V|awk '{print $2}'|cut -d '.' -f 1)
+	if [ "${pipVersion}" -lt "9" ];then
+		pip install --upgrade pip
 	fi
 }
 Install_Pillow()
@@ -358,24 +442,31 @@ Install_Python_Lib(){
 		apt install libffi-dev -y
 	fi
 
-	curl -Ss --connect-timeout 3 -m 60 http://download.bt.cn/install/pip_select.sh|bash
-	pip install --upgrade setuptools 
-	pip install -r ${setup_path}/server/panel/requirements.txt
-	isGevent=$(pip list|grep gevent)
-	if [ "$isGevent" = "" ];then
-		if [ "${PM}" = "yum" ]; then
-			yum install python-gevent -y
-		elif [ "${PM}" = "apt-get" ]; then
-			apt-get install python-gevent -y
-		fi
+	pip install --upgrade setuptools
+
+	TencentCloudCheck=$(cat /etc/hosts|grep -oE VM_[0-9]+_[0-9]+)
+	if [ "${TencentCloudCheck}" ];then
+		pip install -I requests
 	fi
-	pip install psutil chardet virtualenv Flask Flask-Session Flask-SocketIO flask-sqlalchemy Pillow gunicorn gevent-websocket paramiko
 	
+	python_gevent=$(rpm -qa|grep gevent)
+	if [ "$python_gevent" != "" ];then
+		yum remove python-gevent -y
+		yum remove python-greenlet -y
+		pip install greenlet -I
+		pip install gevent -I
+	fi
+
+	pip install -r ${setup_path}/server/panel/requirements.txt
+	pip install werkzeug==0.16.1
+    pip install setuptools==41.2
+	pip install greenlet
+	pip install gevent
+	pip install psutil chardet virtualenv Flask Flask-Session Flask-SocketIO flask-sqlalchemy Pillow gevent-websocket paramiko
+	pip install qiniu oss2 upyun cos-python-sdk-v5
 	Install_Pillow
 	Install_psutil
 	Install_chardet
-	pip install gunicorn
-
 }
 
 Set_Bt_Panel(){
@@ -397,7 +488,7 @@ Set_Bt_Panel(){
 	chmod 600 ${setup_path}/server/panel/default.pl
 	/etc/init.d/bt restart
 	sleep 3
-	isStart=$(ps aux |grep 'gunicorn'|grep -v grep|awk '{print $2}')
+	isStart=$(ps aux |grep 'BT-Panel'|grep -v grep|awk '{print $2}')
 	if [ -z "${isStart}" ];then
 		Red_Error "ERROR: The BT-Panel service startup failed."
 	fi
@@ -435,7 +526,10 @@ Set_Firewall(){
 				service iptables restart
 			fi
 		else
+			AliyunCheck=$(cat /etc/redhat-release|grep "Aliyun Linux")
+			[ "${AliyunCheck}" ] && return
 			yum install firewalld -y
+			[ "${Centos8Check}" ] && yum reinstall python3-six -y
 			systemctl enable firewalld
 			systemctl start firewalld
 			firewall-cmd --set-default-zone=public > /dev/null 2>&1
@@ -494,11 +588,15 @@ Setup_Count(){
 }
 
 Install_Main(){
+	Lock_Clear
 	System_Check
 	Get_Pack_Manager
 	get_node_url
 
-	Auto_Swap
+	MEM_TOTAL=$(free -g|grep Mem|awk '{print $2}')
+	if [ "${MEM_TOTAL}" -le "1" ];then
+		Auto_Swap
+	fi
 
 	startTime=`date +%s`
 	if [ "${PM}" = "yum" ]; then
@@ -517,16 +615,16 @@ Install_Main(){
 	Set_Firewall
 
 	Get_Ip_Address
-	Setup_Count
+	Setup_Count ${IDC_CODE}
 }
 
 echo "
 +----------------------------------------------------------------------
-| Bt-WebPanel 6.0 FOR CentOS/Ubuntu/Debian
+| Bt-WebPanel 7.0 FOR CentOS/Ubuntu/Debian
 +----------------------------------------------------------------------
 | Copyright © 2015-2099 BT-SOFT(http://www.bt.cn) All rights reserved.
 +----------------------------------------------------------------------
-| The WebPanel URL will be http://SERVER_IP:8888 when installed.
+| The WebPanel URL will be http://SERVER_IP:2020 when installed.
 +----------------------------------------------------------------------
 "
 while [ "$go" != 'y' ] && [ "$go" != 'n' ]
@@ -548,11 +646,13 @@ echo -e "username: $username"
 echo -e "password: $password"
 echo -e "\033[33mWarning:\033[0m"
 echo -e "\033[33mIf you cannot access the panel, \033[0m"
-echo -e "\033[33mrelease the following port (8888|888|80|443|20|21) in the security group\033[0m"
+echo -e "\033[33mrelease the following port (2020|888|80|443|20|21) in the security group\033[0m"
 echo -e "=================================================================="
 
 endTime=`date +%s`
 ((outTime=($endTime-$startTime)/60))
 echo -e "Time consumed:\033[32m $outTime \033[0mMinute!"
-rm -f new_install.sh	
-
+echo -e "\033[31m该界面说明脚本已经执行完毕，欢迎使用！ \033[0m"
+rm -rf install.sh
+rm -rf install_6.0.sh	
+rm -ff new_install.sh	
