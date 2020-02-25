@@ -135,4 +135,4 @@ case $action in
 		;;
 esac
 
-rm -f bt-uninstall.sh
+rm -f bt_uninstall.sh
