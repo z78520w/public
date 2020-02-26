@@ -117,6 +117,7 @@ check_pip(){
 		do
 			ln -s $python_path $pip_dir
 		done
+		pip install --upgrade pip
 	else
 		py_ver='2.7.16'
 		wget "https://www.python.org/ftp/python/${py_ver}/Python-${py_ver}.tgz"
