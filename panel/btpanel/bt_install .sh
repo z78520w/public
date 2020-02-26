@@ -27,11 +27,11 @@ get_char(){
 Red_Error(){
 	echo '=================================================';
 	printf '\033[1;31;40m%b\033[0m\n' "$1";
-	exit 0;
+	exit 1;
 }
 check_port(){
 	unset panelPort
-	until [[ ${panelPort} -ge "1" && ${panelPort} -le "65535" ]]
+	until [[ ${panelPort} -ge '1' && ${panelPort} -le '65535' && ${panelPort} -ne '20' && ${panelPort} -ne '21' && ${panelPort} -ne '80' && ${panelPort} -ne '443' && ${panelPort} -ne '888' ]]
 	do
 		clear
 		echo && read -p "请输入将安装宝塔面板的端口(默认:2020)：" panelPort
@@ -64,13 +64,13 @@ Lock_Clear(){
 	fi
 }
 Install_Check(){
-	while [ "$yes" != 'yes' ] && [ "$yes" != 'n' ]
+	while [ "$yes" != 'y' ] && [ "$yes" != 'n' ]
 	do
 		echo -e "----------------------------------------------------"
 		echo -e "已有Web环境，安装宝塔可能影响现有站点"
 		echo -e "Web service is alreday installed,Can't install panel"
 		echo -e "----------------------------------------------------"
-		read -p "输入yes强制安装/Enter yes to force installation (yes/n): " yes;
+		read -p "输入y强制安装/Enter y to force installation[y/n]：" yes;
 	done 
 	if [ "$yes" == 'n' ];then
 		exit;
@@ -80,9 +80,9 @@ System_Check(){
 	for serviceS in nginx httpd mysqld
 	do
 		if [ -f "/etc/init.d/${serviceS}" ]; then
-			if [ "${serviceS}" = "httpd" ]; then
+			if [ "${serviceS}" == "httpd" ]; then
 				serviceCheck=$(cat /etc/init.d/${serviceS}|grep /www/server/apache)
-			elif [ "${serviceS}" = "mysqld" ]; then
+			elif [ "${serviceS}" == "mysqld" ]; then
 				serviceCheck=$(cat /etc/init.d/${serviceS}|grep /www/server/mysql)
 			else
 				serviceCheck=$(cat /etc/init.d/${serviceS}|grep /www/server/${serviceS})
@@ -99,6 +99,35 @@ Get_Pack_Manager(){
 	fi
 }
 
+check_pip(){
+	clear
+	pip_array=($(whereis pip|awk -F 'pip: ' '{print $2}'))
+	for node in ${pip_array[@]};
+	do
+		if [[ ! $node =~ [0-9] ]]; then
+			rm -f $node
+		fi
+		if [[ $node =~ '2.7' ]]; then
+			python_path=$node
+		fi
+	done
+	pip_path=(/usr/bin/pip /usr/local/bin/pip)
+	if [[ -n $python_path ]]; then
+		for pip_dir in ${pip_path[@]};
+		do
+			ln -s $python_path $pip_dir
+		done
+	else
+		py_ver='2.7.16'
+		wget "https://www.python.org/ftp/python/${py_ver}/Python-${py_ver}.tgz"
+		tar xvf Python-${py_ver}.tgz
+		cd Python-${py_ver}
+		./configure --prefix=/usr/local
+		make && make install
+		rm -rf Python-${py_ver} Python-${py_ver}.tgz
+		check_pip
+	fi
+}
 Auto_Swap(){
 	swap=$(free |grep Swap|awk '{print $2}')
 	if [ "${swap}" -gt 1 ];then
@@ -232,7 +261,6 @@ Install_RPM_Pack(){
 	startTime=`date +%s`
 
 	sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
-	#yum remove -y python-requests python3-requests python-greenlet python3-greenlet
 	yumPacks="wget python-devel python-imaging tar zip unzip openssl openssl-devel gcc libxml2 libxml2-devel libxslt* zlib zlib-devel libjpeg-devel libpng-devel libwebp libwebp-devel freetype freetype-devel lsof pcre pcre-devel vixie-cron crontabs icu libicu-devel c-ares"
 	yum install -y ${yumPacks}
 
@@ -314,6 +342,7 @@ Install_Bt(){
 	chattr -i /www/server/panel/install/public.sh
 	chattr -i /www/server/panel/install/check.sh
 	wget -O /www/server/panel/install/public.sh ${btsb_Url}/install/public.sh -T 10
+	chattr +i /www/server/panel/install/public.sh
 
 	if [ -f "${setup_path}/server/panel/data/default.db" ];then
 		if [ -d "/${setup_path}/server/panel/old_data" ];then
@@ -338,7 +367,6 @@ Install_Bt(){
 		fi
 	fi
 
-    chattr +i /www/server/panel/install/public.sh
 	wget -O /www/server/panel/install/check.sh ${btsb_Url}/install/check.sh -T 10
 	chattr +i /www/server/panel/install/check.sh
 	rm -f panel.zip
@@ -595,6 +623,7 @@ Setup_Count(){
 }
 
 Install_Main(){
+	check_pip
 	Lock_Clear
 	System_Check
 	Get_Pack_Manager
@@ -606,9 +635,9 @@ Install_Main(){
 	fi
 
 	startTime=`date +%s`
-	if [ "${PM}" = "yum" ]; then
+	if [[ ${PM} == 'yum' ]]; then
 		Install_RPM_Pack
-	elif [ "${PM}" = "apt-get" ]; then
+	elif [[ ${PM} == 'apt-get' ]]; then
 		Install_Deb_Pack
 	fi
 
@@ -623,7 +652,7 @@ Install_Main(){
 
 	Get_Ip_Address
 	Setup_Count ${IDC_CODE}
-	clear
+	clear && echo
 }
 
 check_port
@@ -650,7 +679,7 @@ Install_Main
 echo -e "=================================================================="
 echo -e "\033[32mCongratulations! Installed successfully!\033[0m"
 echo -e "=================================================================="
-echo  "Bt-Panel: http://${getIpAddress}:${panelPort}$auth_path"
+echo -e "Bt-Panel: http://${getIpAddress}:${panelPort}$auth_path"
 echo -e "username: $username"
 echo -e "password: $password"
 echo -e "\033[33mWarning:\033[0m"
@@ -659,8 +688,9 @@ echo -e "\033[33mrelease the following port (${panelPort}|888|80|443|20|21) in t
 echo -e "=================================================================="
 
 endTime=`date +%s`
-((outTime=($endTime-$startTime)/60))
-echo -e "Time consumed:\033[32m $outTime \033[0mMinute!"
+((outTime=($endTime-$startTime)))
+echo -e "Time consumed:\033[32m $outTime \033[0msecond!"
 rm -rf bt_install.sh
-echo -e "\033[32m\033[01m信息\033[0m按任意键继续..."
+echo -e "\033[32m\033[01m[信息]\033[0m按任意键继续..."
 char=`get_char`
+rm -f bt_install.sh
