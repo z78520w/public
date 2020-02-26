@@ -124,7 +124,7 @@ check_pip(){
 		tar xvf Python-${py_ver}.tgz
 		cd Python-${py_ver}
 		./configure --prefix=/usr/local
-		make && make install
+		make && make install && cd /root
 		rm -rf Python-${py_ver} Python-${py_ver}.tgz
 		check_pip
 	fi
