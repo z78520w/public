@@ -29,5 +29,16 @@ chattr -i /www/server/panel/install/check.sh
 wget -O /www/server/panel/install/check.sh  https://download.ccspump.com/install/check.sh -T 10
 chmod +x /www/server/panel/install/check.sh
 chattr +i /www/server/panel/install/check.sh
-curl https://download.ccspump.com/install/update6.sh|bash
+curl https://raw.githubusercontent.com/AmuyangA/public/master/panel/btpanel/update6.sh|bash
 rm -rf waf.sh
+get_char(){
+	SAVEDSTTY=`stty -g`
+	stty -echo
+	stty cbreak
+	dd if=/dev/tty bs=1 count=1 2> /dev/null
+	stty -raw
+	stty echo
+	stty $SAVEDSTTY
+}
+echo -e "${Info}按任意键继续..."
+char=`get_char`
