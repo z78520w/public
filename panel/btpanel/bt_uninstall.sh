@@ -3,6 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 
 Remove_Bt(){
+	rm -f bt_uninstall.sh
 	if [ ! -f "/etc/init.d/bt" ] || [ ! -d "/www/server/panel" ]; then
 		echo -e "此服务器没有安装宝塔！"
 		echo -e "This server does not install bt-panel"
@@ -132,5 +133,3 @@ case $action in
 		Remove_Bt
 		;;
 esac
-
-rm -f bt_uninstall.sh
