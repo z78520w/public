@@ -111,10 +111,8 @@ Remove_Data(){
 	rm -rf /www/wwwroot
 }
  
-#echo -e "What you want to do ?(Default:1)"
 echo "1) 卸载宝塔"  
 echo "2) 卸载宝塔及运行环境"
-#echo "3) 卸载宝塔及运行环境并清除所有站点相关数据"
 echo "*请检查安全类软件是否关闭，否正可能导致无法正常卸载 "
 echo "=================================================" 
 read -p "请选择你要进行的操作(1-2 默认:1): " action; 
