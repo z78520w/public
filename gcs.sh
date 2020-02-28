@@ -16,6 +16,15 @@ yello_font(){
 Info=`green_font [信息]` && Error=`red_font [错误]` && Tip=`yello_font [注意]`
 [ $(id -u) != '0' ] && { echo -e "${Error}您必须以root用户运行此脚本"; exit 1; }
 
+get_char(){
+	SAVEDSTTY=`stty -g`
+	stty -echo
+	stty cbreak
+	dd if=/dev/tty bs=1 count=1 2> /dev/null
+	stty -raw
+	stty echo
+	stty $SAVEDSTTY
+}
 if [[ -f /etc/redhat-release ]]; then
 	release="centos"
 elif cat /etc/issue | grep -q -E -i "debian"; then
