@@ -53,7 +53,8 @@ else
 fi
 
 clear
-green_font '免费撸谷歌云一键脚本' "版本号：${sh_ver}\n"
+green_font '免费撸谷歌云一键脚本' "版本号：${sh_ver}"
+echo -e "       \033[37m\033[01m--胖波比--\033[0m\n"
 echo -e "${Info}主机名：  $(red_font $HOSTNAME)"
 echo -e "${Info}SSH端口： $(red_font $ssh_port)"
 echo -e "${Info}用户名：  $(red_font root)"
