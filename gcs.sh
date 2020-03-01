@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.0.1'
+sh_ver='1.0.2'
 green_font(){
 	echo -e "\033[32m\033[01m$1\033[0m\033[37m\033[01m$2\033[0m"
 }
@@ -42,6 +42,10 @@ elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
 fi
 ssh_port=$(hostname -f|awk -F '-' '{print $2}')
 HOSTNAME="$(hostname -f|awk -F "${ssh_port}-" '{print $2}').cloudshell.dev"
+IP=$(curl -s ipinfo.io/ip)
+[ -z ${IP} ] && IP=$(curl -s http://api.ipify.org)
+[ -z ${IP} ] && IP=$(curl -s ipv4.icanhazip.com)
+[ -z ${IP} ] && IP=$(curl -s ipv6.icanhazip.com)
 pw=$(tr -dc 'A-Za-z0-9!@#$%^&*()[]{}+=_,' </dev/urandom | head -c 17)
 echo root:${pw} |chpasswd
 sed -i '1,/PermitRootLogin/{s/.*PermitRootLogin.*/PermitRootLogin yes/}' /etc/ssh/sshd_config
@@ -55,9 +59,10 @@ fi
 clear
 green_font '免费撸谷歌云一键脚本' "版本号：${sh_ver}"
 echo -e "            \033[37m\033[01m--胖波比--\033[0m\n"
-echo -e "${Info}主机名：  $(red_font $HOSTNAME)"
-echo -e "${Info}SSH端口： $(red_font $ssh_port)"
-echo -e "${Info}用户名：  $(red_font root)"
-echo -e "${Info}密码是：  $(red_font $pw)"
+echo -e "${Info}主机名1：  $(red_font $HOSTNAME)"
+echo -e "${Info}主机名2：  $(red_font $IP)"
+echo -e "${Info}SSH端口：  $(red_font $ssh_port)"
+echo -e "${Info}用户名：   $(red_font root)"
+echo -e "${Info}密码是：   $(red_font $pw)"
 echo -e "\n${Tip}请务必记录您的密码！任意键退出..."
 char=`get_char`
