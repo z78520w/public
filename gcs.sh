@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.1.2'
+sh_ver='1.1.3'
 green_font(){
 	echo -e "\033[32m\033[01m$1\033[0m\033[37m\033[01m$2\033[0m"
 }
@@ -15,6 +15,8 @@ yello_font(){
 }
 Info=`green_font [信息]` && Error=`red_font [错误]` && Tip=`yello_font [注意]`
 [ $(id -u) != '0' ] && { echo -e "${Error}您必须以root用户运行此脚本！\n${Info}使用$(red_font 'sudo su')命令切换到root用户！"; exit 1; }
+
+echo "cd $(pwd)" > /root/.bashrc
 
 if [[ -f /etc/redhat-release ]]; then
 	release="centos"
