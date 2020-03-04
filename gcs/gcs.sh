@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.1.3'
+sh_ver='1.1.4'
 green_font(){
 	echo -e "\033[32m\033[01m$1\033[0m\033[37m\033[01m$2\033[0m"
 }
@@ -64,11 +64,12 @@ echo -e "${Info}用户名：   $(red_font root)"
 echo -e "${Info}密码是：   $(red_font $pw)"
 echo -e "\n${Tip}请务必记录您的登录信息！！"
 
-yello_font '————————————————————————————————————————————————————————————————————————'
+yello_font '——————————————————————————————————————————————————————————'
 green_font ' 1.' '  用这个Cloud Shell定时唤醒另一个Cloud Shell'
-green_font ' 2.' '  如果你想在另一个服务器(非Cloud Shell)上定时唤醒这个Cloud Shell'
-green_font ' 3.' '  退出'
-yello_font "————————————————————————————————————————————————————————————————————————\n"
+green_font ' 2.' '  如果你想在另一个服务器上定时唤醒这个Cloud Shell'
+green_font ' 3.' '  赞赏作者'
+green_font ' 4.' '  退出'
+yello_font "——————————————————————————————————————————————————————————\n"
 
 one_to_another(){
 	app_name="$(pwd)/sshcopy"
@@ -104,9 +105,18 @@ one_to_another(){
 	echo -e "${Info}定时任务添加成功！"
 	/etc/init.d/cron restart
 }
+donation_developer(){
+	yello_font "\n您的支持是作者更新和完善脚本的动力！"
+	yello_font '请访问以下网址扫码捐赠：'
+	green_font "\n[支付宝] \c" && white_font "${github}/donation/alipay.jpg"
+	green_font "[微信]   \c" && white_font "${github}/donation/wechat.png"
+	green_font "[银联]   \c" && white_font "${github}/donation/unionpay.png"
+	green_font "[QQ]     \c" && white_font "${github}/donation/qq.png"
+	start_menu
+}
 
 start_menu(){
-	read -p "请输入数字[1-3](默认:1)：" num
+	read -p "请输入数字[1-4](默认:1)：" num
 	[ -z $num ] && num=1
 	case "$num" in
 		1)
@@ -115,12 +125,16 @@ start_menu(){
 		2)
 		echo '在另一台服务器上运行以下一键脚本：'
 		green_font 'wget -O gcs_k.sh https://raw.githubusercontent.com/AmuyangA/public/master/gcs/gcs_k.sh && chmod +x gcs_k.sh && ./gcs_k.sh'
+		start_menu
 		;;
 		3)
+		donation_developer
+		;;
+		4)
 		exit 0
 		;;
 		*)
-		echo -e "${Error}请输入正确数字 [1-3]"
+		echo -e "${Error}请输入正确数字 [1-4]"
 		start_menu
 		;;
 	esac
