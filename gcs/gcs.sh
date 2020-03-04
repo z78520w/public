@@ -10,6 +10,9 @@ green_font(){
 red_font(){
 	echo -e "\033[31m\033[01m$1\033[0m"
 }
+white_font(){
+	echo -e "\033[37m\033[01m$1\033[0m"
+}
 yello_font(){
 	echo -e "\033[33m\033[01m$1\033[0m"
 }
