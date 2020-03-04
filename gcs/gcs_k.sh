@@ -37,7 +37,7 @@ if [ -e /var/spool/cron/root ]; then
 elif [ -e /var/spool/cron/crontabs/root ]; then
 	corn_path='/var/spool/cron/crontabs/root'
 else
-	$corn_path="$(pwd)/temp"
+	corn_path="$(pwd)/temp"
 	echo 'SHELL=/bin/bash' > $corn_path
 fi
 
