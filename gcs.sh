@@ -109,6 +109,7 @@ one_to_another(){
 	/etc/init.d/cron restart
 }
 donation_developer(){
+	github='https://raw.githubusercontent.com/AmuyangA/public/master'
 	yello_font "\n您的支持是作者更新和完善脚本的动力！"
 	yello_font '请访问以下网址扫码捐赠：'
 	green_font "\n[支付宝] \c" && white_font "${github}/donation/alipay.jpg"
