@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.0.2'
+sh_ver='1.1.2'
 green_font(){
 	echo -e "\033[32m\033[01m$1\033[0m\033[37m\033[01m$2\033[0m"
 }
@@ -16,15 +16,6 @@ yello_font(){
 Info=`green_font [信息]` && Error=`red_font [错误]` && Tip=`yello_font [注意]`
 [ $(id -u) != '0' ] && { echo -e "${Error}您必须以root用户运行此脚本！\n${Info}使用$(red_font 'sudo su')命令切换到root用户！"; exit 1; }
 
-get_char(){
-	SAVEDSTTY=`stty -g`
-	stty -echo
-	stty cbreak
-	dd if=/dev/tty bs=1 count=1 2> /dev/null
-	stty -raw
-	stty echo
-	stty $SAVEDSTTY
-}
 if [[ -f /etc/redhat-release ]]; then
 	release="centos"
 elif cat /etc/issue | grep -q -E -i "debian"; then
@@ -39,6 +30,11 @@ elif cat /proc/version | grep -q -E -i "ubuntu"; then
 	release="ubuntu"
 elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
 	release="centos"
+fi
+if [[ ${release} == "centos" ]]; then
+	PM='yum'
+else
+	PM='apt'
 fi
 ssh_port=$(hostname -f|awk -F '-' '{print $2}')
 HOSTNAME="$(hostname -f|awk -F "${ssh_port}-" '{print $2}').cloudshell.dev"
@@ -64,5 +60,67 @@ echo -e "${Info}主机名2：  $(red_font $IP)"
 echo -e "${Info}SSH端口：  $(red_font $ssh_port)"
 echo -e "${Info}用户名：   $(red_font root)"
 echo -e "${Info}密码是：   $(red_font $pw)"
-echo -e "\n${Tip}请务必记录您的密码！任意键退出..."
-char=`get_char`
+echo -e "\n${Tip}请务必记录您的登录信息！！"
+
+yello_font '————————————————————————————————————————————————————————————————————————'
+green_font ' 1.' '  用这个Cloud Shell定时唤醒另一个Cloud Shell'
+green_font ' 2.' '  如果你想在另一个服务器(非Cloud Shell)上定时唤醒这个Cloud Shell'
+green_font ' 3.' '  退出'
+yello_font "————————————————————————————————————————————————————————————————————————\n"
+
+one_to_another(){
+	app_name="$(pwd)/sshcopy"
+	if [ ! -e $app_name ]; then
+		echo -e "${Info}正在下载免密登录程序..."
+		wget -qO $app_name https://github.com/Jrohy/sshcopy/releases/download/v1.4/sshcopy_linux_386 && chmod +x $app_name
+	fi
+
+	clear && echo
+	read -p "请输入远程服务器的IP(主机名2)：" IP
+	read -p "请输入 ${IP} 的SSH端口(默认:6000)：" ssh_port
+	[ -z $ssh_port ] && ssh_port='6000'
+	read -p "请输入 ${IP} 的登录用户(默认:root)：" user
+	[ -z $user ] && user='root'
+	read -p "请输入 ${IP} 的登录密码：" passward
+
+	$app_name -ip $IP -user $user -port $ssh_port -pass $passward
+
+	if [ -e /var/spool/cron/root ]; then
+		corn_path='/var/spool/cron/root'
+	elif [ -e /var/spool/cron/crontabs/root ]; then
+		corn_path='/var/spool/cron/crontabs/root'
+	else
+		corn_path="$(pwd)/temp"
+		echo 'SHELL=/bin/bash' > $corn_path
+	fi
+
+	echo "*/10 * * * *  ssh -p ${ssh_port} ${user}@${IP}" >> $corn_path
+	if [[ $corn_path == "$(pwd)/temp" ]]; then
+		crontab -u root $corn_path
+		rm -f $corn_path
+	fi
+	echo -e "${Info}定时任务添加成功！"
+	/etc/init.d/cron restart
+}
+
+start_menu(){
+	read -p "请输入数字[1-3](默认:1)：" num
+	[ -z $num ] && num=1
+	case "$num" in
+		1)
+		one_to_another
+		;;
+		2)
+		echo '在另一台服务器上运行以下一键脚本：'
+		green_font 'wget -O gcs_k.sh https://raw.githubusercontent.com/AmuyangA/public/master/gcs/gcs_k.sh && chmod +x gcs_k.sh && ./gcs_k.sh'
+		;;
+		3)
+		exit 0
+		;;
+		*)
+		echo -e "${Error}请输入正确数字 [1-3]"
+		start_menu
+		;;
+	esac
+}
+start_menu
