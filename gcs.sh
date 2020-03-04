@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.1.4'
+sh_ver='1.1.5'
 green_font(){
 	echo -e "\033[32m\033[01m$1\033[0m\033[37m\033[01m$2\033[0m"
 }
@@ -65,15 +65,16 @@ echo -e "${Info}主机名2：  $(red_font $IP)"
 echo -e "${Info}SSH端口：  $(red_font $ssh_port)"
 echo -e "${Info}用户名：   $(red_font root)"
 echo -e "${Info}密码是：   $(red_font $pw)"
-echo -e "\n${Tip}请务必记录您的登录信息！！"
 
+echo -e "\n${Tip}请务必记录您的登录信息！！"
 yello_font '——————————————————————————————————————————————————————————'
 green_font ' 1.' '  用这个Cloud Shell定时唤醒另一个Cloud Shell'
 green_font ' 2.' '  如果你想在另一个服务器上定时唤醒这个Cloud Shell'
 green_font ' 3.' '  赞赏作者'
 green_font ' 4.' '  退出'
-yello_font "——————————————————————————————————————————————————————————\n"
+yello_font '——————————————————————————————————————————————————————————'
 
+github='https://raw.githubusercontent.com/AmuyangA/public/master'
 one_to_another(){
 	app_name="$(pwd)/sshcopy"
 	if [ ! -e $app_name ]; then
@@ -109,10 +110,9 @@ one_to_another(){
 	/etc/init.d/cron restart
 }
 donation_developer(){
-	github='https://raw.githubusercontent.com/AmuyangA/public/master'
-	yello_font "\n您的支持是作者更新和完善脚本的动力！"
+	yello_font '您的支持是作者更新和完善脚本的动力！'
 	yello_font '请访问以下网址扫码捐赠：'
-	green_font "\n[支付宝] \c" && white_font "${github}/donation/alipay.jpg"
+	green_font "[支付宝] \c" && white_font "${github}/donation/alipay.jpg"
 	green_font "[微信]   \c" && white_font "${github}/donation/wechat.png"
 	green_font "[银联]   \c" && white_font "${github}/donation/unionpay.png"
 	green_font "[QQ]     \c" && white_font "${github}/donation/qq.png"
@@ -120,7 +120,7 @@ donation_developer(){
 }
 
 start_menu(){
-	read -p "请输入数字[1-4](默认:1)：" num
+	echo && read -p "请输入数字[1-4](默认:1)：" num
 	[ -z $num ] && num=1
 	case "$num" in
 		1)
@@ -128,7 +128,7 @@ start_menu(){
 		;;
 		2)
 		echo '在另一台服务器上运行以下一键脚本：'
-		green_font 'wget -O gcs_k.sh https://raw.githubusercontent.com/AmuyangA/public/master/gcs/gcs_k.sh && chmod +x gcs_k.sh && ./gcs_k.sh'
+		green_font "wget -O gcs_k.sh ${github}/gcs/gcs_k.sh && chmod +x gcs_k.sh && ./gcs_k.sh"
 		start_menu
 		;;
 		3)
@@ -142,5 +142,8 @@ start_menu(){
 		start_menu
 		;;
 	esac
+	echo -e "\n${Info}如果您之前在 $(green_font 'https://ssh.cloud.google.com') 执行过此脚本"
+	echo -e "${Info}那么以后再执行此脚本只需运行 $(red_font './gcs.sh') 即可，即使机器重置也不受影响"
+	echo -e "${Info}更新脚本命令：$(green_font 'wget -O gcs.sh '${github}'/gcs/gcs.sh && chmod +x gcs.sh')"
 }
 start_menu
