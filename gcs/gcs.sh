@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.1.6'
+sh_ver='1.1.7'
 green_font(){
 	echo -e "\033[32m\033[01m$1\033[0m\033[37m\033[01m$2\033[0m"
 }
@@ -37,11 +37,7 @@ elif cat /proc/version | grep -q -E -i "ubuntu"; then
 elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
 	release="centos"
 fi
-if [[ ${release} == "centos" ]]; then
-	PM='yum'
-else
-	PM='apt'
-fi
+
 ssh_port=$(hostname -f|awk -F '-' '{print $2}')
 HOSTNAME="$(hostname -f|awk -F "${ssh_port}-" '{print $2}').cloudshell.dev"
 IP=$(curl -s ipinfo.io/ip)
@@ -84,7 +80,10 @@ else
 	echo 'SHELL=/bin/bash' > $corn_path
 fi
 
-echo "*/10 * * * *  ssh -p ${ssh_port} root@${IP}" >> $corn_path
+if [[ $corn_path != "$(pwd)/temp" ]]; then
+	sed -i "/ssh -p ${ssh_port} root@${IP}/d" $corn_path
+fi
+echo "*/5 * * * *  ssh -p ${ssh_port} root@${IP}" >> $corn_path
 if [[ $corn_path == "$(pwd)/temp" ]]; then
 	crontab -u root $corn_path
 	rm -f $corn_path
