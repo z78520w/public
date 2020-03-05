@@ -43,7 +43,9 @@ fi
 
 $PM -y install sshpass
 
-clear && echo
+clear
+green_font '免费撸Goorm一键脚本' " 版本号：${sh_ver}"
+echo -e "           \033[37m\033[01m--胖波比--\033[0m\n"
 unset IP ssh_port passward
 until [[ -n $IP ]]
 do
@@ -67,7 +69,7 @@ else
 	echo 'SHELL=/bin/bash' > $corn_path
 fi
 
-echo "*/2 * * * *  sshpass -p ${passward} ssh -p ${ssh_port} root@${IP}" >> $corn_path
+echo "*/1 * * * *  sshpass -p ${passward} ssh -p ${ssh_port} root@${IP}" >> $corn_path
 if [[ $corn_path == "$(pwd)/temp" ]]; then
 	crontab -u root $corn_path
 	rm -f $corn_path
