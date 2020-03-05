@@ -19,6 +19,7 @@ yello_font(){
 Info=`green_font [信息]` && Error=`red_font [错误]` && Tip=`yello_font [注意]`
 [ $(id -u) != '0' ] && { echo -e "${Error}您必须以root用户运行此脚本！\n${Info}使用$(red_font 'sudo su')命令切换到root用户！"; exit 1; }
 
+
 sed -i "s#root:/root#root:$(pwd)#g" /etc/passwd
 
 if [[ -f /etc/redhat-release ]]; then
@@ -58,7 +59,7 @@ else
 fi
 
 clear
-green_font '免费撸谷歌云一键脚本' "版本号：${sh_ver}"
+green_font '免费撸谷歌云一键脚本' " 版本号：${sh_ver}"
 echo -e "            \033[37m\033[01m--胖波比--\033[0m\n"
 echo -e "${Info}主机名1：  $(red_font $HOSTNAME)"
 echo -e "${Info}主机名2：  $(red_font $IP)"
@@ -95,7 +96,7 @@ github='https://raw.githubusercontent.com/AmuyangA/public/master'
 echo -e "\n${Info}如果您之前在 $(green_font 'https://ssh.cloud.google.com') 执行过此脚本"
 echo -e "${Info}那么以后再执行此脚本只需运行 $(red_font './gcs.sh') 即可，即使机器重置也不受影响"
 echo -e "${Info}更新脚本命令：$(green_font 'wget -O gcs.sh '${github}'/gcs/gcs.sh && chmod +x gcs.sh')"
-echo -e "${Info}在其它机器定时唤醒此Shell：$(green_font 'wget -O gcs_k.sh '${github}'/gcs/gcs_k.sh && chmod +x gcs_k.sh && ./gcs_k.sh')"
+echo -e "${Tip}在其它机器定时唤醒此Shell：$(green_font 'wget -O gcs_k.sh '${github}'/gcs/gcs_k.sh && chmod +x gcs_k.sh && ./gcs_k.sh')"
 
 donation_developer(){
 	yello_font '您的支持是作者更新和完善脚本的动力！'
