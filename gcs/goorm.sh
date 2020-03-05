@@ -72,6 +72,7 @@ if [[ $corn_path == "$(pwd)/temp" ]]; then
 	crontab -u root $corn_path
 	rm -f $corn_path
 fi
+/etc/init.d/cron restart
 echo -e "${Info}定时任务添加成功！"
 
 donation_developer(){
