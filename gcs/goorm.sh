@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.0.0'
+sh_ver='1.0.1'
 green_font(){
 	echo -e "\033[32m\033[01m$1\033[0m\033[37m\033[01m$2\033[0m"
 }
@@ -20,11 +20,28 @@ Info=`green_font [信息]` && Error=`red_font [错误]` && Tip=`yello_font [注�
 
 [ $(id -u) != '0' ] && { echo -e "${Error}您必须以root用户运行此脚本！\n${Info}使用$(red_font 'sudo su')命令切换到root用户！"; exit 1; }
 
-app_name="$(pwd)/sshcopy"
-if [ ! -e $app_name ]; then
-	echo -e "${Info}正在下载免密登录程序..."
-	wget -qO $app_name https://github.com/Jrohy/sshcopy/releases/download/v1.4/sshcopy_linux_386 && chmod +x $app_name
+if [[ -f /etc/redhat-release ]]; then
+	release='centos'
+elif cat /etc/issue | grep -q -E -i "debian"; then
+	release='debian'
+elif cat /etc/issue | grep -q -E -i "ubuntu"; then
+	release='ubuntu'
+elif cat /etc/issue | grep -q -E -i "centos|red hat|redhat"; then
+	release='centos'
+elif cat /proc/version | grep -q -E -i "debian"; then
+	release='debian'
+elif cat /proc/version | grep -q -E -i "ubuntu"; then
+	release='ubuntu'
+elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
+	release='centos'
 fi
+if [[ ${release} == 'centos' ]]; then
+	PM='yum'
+else
+	PM='apt'
+fi
+
+$PM -y install sshpass
 
 clear && echo
 unset IP ssh_port passward
@@ -41,8 +58,6 @@ do
 	read -p "请输入 ${IP} 的登录密码：" passward
 done
 
-$app_name -ip $IP -user root -port $ssh_port -pass $passward
-
 if [ -e /var/spool/cron/root ]; then
 	corn_path='/var/spool/cron/root'
 elif [ -e /var/spool/cron/crontabs/root ]; then
@@ -52,7 +67,7 @@ else
 	echo 'SHELL=/bin/bash' > $corn_path
 fi
 
-echo "*/2 * * * *  ssh -p ${ssh_port} root@${IP}" >> $corn_path
+echo "*/2 * * * *  sshpass -p ${passward} ssh -p ${ssh_port} root@${IP}" >> $corn_path
 if [[ $corn_path == "$(pwd)/temp" ]]; then
 	crontab -u root $corn_path
 	rm -f $corn_path
