@@ -48,11 +48,14 @@ IP=$(curl -s ipinfo.io/ip)
 num='y'
 if [[ -e $ip_path ]]; then
 	if [[ $IP == "$(cat ${ip_path}|sed -n '1p')" ]]; then
-		echo && read -p "此机器暂未被重置，是否更新密码?[y/n](默认:n)：" num
+		clear && echo && read -p "此机器暂未被重置，是否更新密码?[y/n](默认:n)：" num
 		[ -z $num ] && num='n'
+	else
+		echo $IP > $(pwd)/ipadd
 	fi
+else
+	echo $IP > $(pwd)/ipadd
 fi
-echo $IP > $(pwd)/ipadd
 
 if [[ $num == 'y' ]]; then
 	pw=$(tr -dc 'A-Za-z0-9!@#$%^&*()[]{}+=_,' </dev/urandom | head -c 17)
