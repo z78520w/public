@@ -47,15 +47,16 @@ IP=$(curl -s ipinfo.io/ip)
 
 num='y'
 if [[ -e $ip_path ]]; then
-	if [[ $IP == "$(cat ${ip_path})" ]]; then
-		read -p "此机器暂未被重置，是否更新密码?[y/n](默认:n)：" num
+	if [[ $IP == "$(cat ${ip_path}|sed -n '1p')" ]]; then
+		echo && read -p "此机器暂未被重置，是否更新密码?[y/n](默认:n)：" num
 		[ -z $num ] && num='n'
 	fi
 fi
 echo $IP > $(pwd)/ipadd
 
-pw=$(tr -dc 'A-Za-z0-9!@#$%^&*()[]{}+=_,' </dev/urandom | head -c 17)
 if [[ $num == 'y' ]]; then
+	pw=$(tr -dc 'A-Za-z0-9!@#$%^&*()[]{}+=_,' </dev/urandom | head -c 17)
+	echo $pw >> $(pwd)/ipadd
 	echo root:${pw} |chpasswd
 	sed -i '1,/PermitRootLogin/{s/.*PermitRootLogin.*/PermitRootLogin yes/}' /etc/ssh/sshd_config
 	sed -i '1,/PasswordAuthentication/{s/.*PasswordAuthentication.*/PasswordAuthentication yes/}' /etc/ssh/sshd_config
@@ -74,6 +75,8 @@ if [[ $num == 'y' ]]; then
 	echo -e "${Info}用户名：   $(red_font root)"
 	echo -e "${Info}密码是：   $(red_font $pw)"
 	echo -e "${Tip}请务必记录您的登录信息！！\n"
+else
+	pw=$(cat ${ip_path}|sed -n '2p')
 fi
 
 app_name="$(pwd)/sshcopy"
