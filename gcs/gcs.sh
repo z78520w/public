@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.1.8'
+sh_ver='1.1.9'
 green_font(){
 	echo -e "\033[32m\033[01m$1\033[0m\033[37m\033[01m$2\033[0m"
 }
@@ -112,6 +112,12 @@ echo -e "\n${Info}如果您之前在 $(green_font 'https://ssh.cloud.google.com'
 echo -e "${Info}那么以后再执行此脚本只需运行 $(red_font './gcs.sh') 即可，即使机器重置也不受影响"
 echo -e "${Info}更新脚本命令：$(green_font 'wget -O gcs.sh '${github}'/gcs/gcs.sh && chmod +x gcs.sh')"
 echo -e "${Tip}在其它机器定时唤醒此Shell：$(green_font 'wget -O gcs_k.sh '${github}'/gcs/gcs_k.sh && chmod +x gcs_k.sh && ./gcs_k.sh')"
+
+new_ver=$(curl -s "${github}"/gcs/gcs.sh|grep 'sh_ver='|head -1|awk -F '=' '{print $2}'|sed $'s/\'//g')
+if [[ $sh_ver != "${new_ver}" ]]; then
+	wget -qO gcs.sh ${github}/gcs/gcs.sh
+	echo -e "\n${Info}脚本已更新！可执行 $(red_font './gcs.sh') 来运行最新脚本..."
+fi
 
 donation_developer(){
 	yello_font '您的支持是作者更新和完善脚本的动力！'
