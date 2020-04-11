@@ -133,7 +133,7 @@ get_char(){
 	stty $SAVEDSTTY
 }
 install_v2ray(){
-	$PM -y install jq curl
+	$PM -y install jq curl lsof
 	clear
 	white_font '请先进入\c' && green_font 'https://my.zerotier.com/login\c' && white_font '注册账号并登录\n'
 	white_font '点击Networks————点击Creat a Network————点进新创建的Network(16位蓝色ID)\n'
@@ -148,6 +148,9 @@ install_v2ray(){
 	zerotier-cli join $netid
 	white_font "刷新网页，$(red_font 'NEVER')变为$(green_font 'ONLINE')则成功穿透"
 	read -p "成功穿透则请输入ZeroTier分配的公网IP(Managed IPs)：" ipinfo
+	echo -e "${Tip}："
+	white_font '\n要在什么设备上使用就在\c' && green_font 'https://www.zerotier.com/download/\c' && white_font '下载对应软件\n'
+	white_font '与上面类似，安装后软件有一个Node ID，将这个Node ID填入Manually Add Member并且加入到\c' red_font $ipinfo && white_font '即可使用...'
 	
 	v2ray_url='https://multi.netlify.com/v2ray.sh'
 	check_pip(){
