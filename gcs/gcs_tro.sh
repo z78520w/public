@@ -191,15 +191,11 @@ start_menu_trojan(){
 	green_font ' 2.' '  安装Trojan'
 	green_font ' 3.' '  卸载Trojan'
 	yello_font '————————————————————————————'
-	green_font ' 0.' '  回到主页'
 	green_font ' 4.' '  退出脚本'
 	yello_font "————————————————————————————\n"
-	read -p "请输入数字[0-4](默认:1)：" num
-	[ -z $num ] && num=1
+	read -p "请输入数字[1-4](默认:2)：" num
+	[ -z $num ] && num=2
 	case $num in
-		0)
-		start_menu_main
-		;;
 		1)
 		view_password
 		echo -e "${Info}任意键回到主页..."
@@ -217,7 +213,7 @@ start_menu_trojan(){
 		;;
 		*)
 		clear
-		echo -e "${Error}请输入正确数字 [0-4]"
+		echo -e "${Error}请输入正确数字 [1-4]"
 		sleep 2s
 		start_menu_trojan
 		;;
