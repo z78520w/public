@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.2.0'
+sh_ver='1.2.1'
 green_font(){
 	echo -e "\033[32m\033[01m$1\033[0m\033[37m\033[01m$2\033[0m"
 }
@@ -35,6 +35,11 @@ elif cat /proc/version | grep -q -E -i "ubuntu"; then
 	release="ubuntu"
 elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
 	release="centos"
+fi
+if [[ ${release} == 'centos' ]]; then
+	PM='yum'
+else
+	PM='apt'
 fi
 
 ssh_port=$(hostname -f|awk -F '-' '{print $2}')
@@ -118,6 +123,101 @@ if [[ $sh_ver != "${new_ver}" ]]; then
 	echo -e "\n${Info}脚本已更新！可执行 $(red_font './gcs.sh') 来运行最新脚本..."
 fi
 
+get_char(){
+	SAVEDSTTY=`stty -g`
+	stty -echo
+	stty cbreak
+	dd if=/dev/tty bs=1 count=1 2> /dev/null
+	stty -raw
+	stty echo
+	stty $SAVEDSTTY
+}
+install_v2ray(){
+	clear
+	$PM -y install jq curl
+	white_font '请先进入\c' && green_font 'https://my.zerotier.com/login\c' && white_font '注册账号并登录'
+	white_font '点击Networks————点击Creat a Network————点进新创建的Network(16位蓝色ID)'
+	white_font '完成操作后任意键继续...'
+	char=`get_char`
+	curl -s https://install.zerotier.com | sudo bash
+	white_font "找到Members————Manually Add Member————填入$(red_font $(zerotier-cli info|awk '{print $3}'))————点击Add New Member————勾选Auth?"
+	white_font '完成操作后任意键继续...'
+	char=`get_char`
+	read -p "请输入ZeroTier Network ID(开始的16位蓝色ID)：" netid
+	zerotier-cli join $netid
+	white_font "刷新网页，$(red_font 'NEVER')变为$(green_font 'ONLINE')则成功穿透"
+	read -p "成功穿透则请输入ZeroTier分配的公网IP(Managed IPs)：" ipinfo
+	
+	v2ray_url='https://multi.netlify.com/v2ray.sh'
+	check_pip(){
+		if [[ ! `pip -V|awk -F '(' '{print $2}'` =~ 'python 3' ]]; then
+			pip_array=($(whereis pip|awk -F 'pip: ' '{print $2}'))
+			for node in ${pip_array[@]};
+			do
+				if [[ ! $node =~ [0-9] ]]; then
+					rm -f $node
+				fi
+				if [[ $node =~ '3.' ]]; then
+					pip_path=$node
+				fi
+			done
+			if [[ -n $pip_path ]]; then
+				ln -s $pip_path /usr/local/bin/pip
+				ln -s $pip_path /usr/bin/pip
+				pip install --upgrade pip
+			else
+				unset CMD
+				py_array=(python3.1 python3.2 python3.3 python3.4 python3.5 python3.6 python3.7 python3.8 python3.9)
+				for node in ${py_array[@]};
+				do
+					if type $node >/dev/null 2>&1; then
+						CMD=$node
+					fi
+				done
+				if [[ -n $CMD ]]; then
+					wget -O get-pip.py https://bootstrap.pypa.io/get-pip.py
+					$CMD get-pip.py
+					rm -f get-pip.py
+				else
+					zlib_ver='1.2.11'
+					wget "http://www.zlib.net/zlib-${zlib_ver}.tar.gz"
+					tar -xvzf zlib-${zlib_ver}.tar.gz
+					cd zlib-${zlib_ver}
+					./configure
+					make && make install && cd /root
+					rm -rf zlib*
+					py_ver='3.7.7'
+					wget "https://www.python.org/ftp/python/${py_ver}/Python-${py_ver}.tgz"
+					tar xvf Python-${py_ver}.tgz
+					cd Python-${py_ver}
+					./configure --prefix=/usr/local
+					make && make install && cd /root
+					rm -rf Python*
+				fi
+				check_pip
+			fi
+		fi
+	}
+	check_pip
+	bash <(curl -sL $v2ray_url) --zh
+	find /usr/local/lib/python*/*-packages/v2ray_util -name group.py > v2raypath
+	line=$(grep -n '__str__(self)' $(cat v2raypath)|tail -1|awk -F ':' '{print $1}')
+	sed -i ''${line}'aself.ip = "'${ipinfo}'"' $(cat v2raypath)
+	sed -i 's#self.ip = "'${ipinfo}'"#        self.ip = "'${ipinfo}'"#g' $(cat v2raypath)
+	rm -f v2raypath
+	protocol=$(jq -r ".inbounds[0].streamSettings.network" /etc/v2ray/config.json)
+	cat /etc/v2ray/config.json | jq "del(.inbounds[0].streamSettings.${protocol}Settings[])" | jq '.inbounds[0].streamSettings.network="ws"' > /root/temp.json
+	temppath="/$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 8)/"
+	cat /root/temp.json | jq '.inbounds[0].streamSettings.wsSettings.path="'${temppath}'"' | jq '.inbounds[0].streamSettings.wsSettings.headers.Host="www.bilibili.com"' > /etc/v2ray/config.json
+	v2ray restart
+	clear && v2ray info
+}
+echo && read -p "是否安装V2Ray并实现内网穿透?[y:是 n:下一步](默认:y)：" num
+[ -z $num ] && num='y'
+if [[ $num == 'y' ]]; then
+	install_v2ray
+fi
+
 donation_developer(){
 	yello_font '您的支持是作者更新和完善脚本的动力！'
 	yello_font '请访问以下网址扫码捐赠：'
@@ -126,8 +226,8 @@ donation_developer(){
 	green_font "[银联]   \c" && white_font "${github}/donation/unionpay.png"
 	green_font "[QQ]     \c" && white_font "${github}/donation/qq.png"
 }
-echo && read -p "是否捐赠作者?[y:是 n:退出脚本](默认:n)：" num
-[ -z $num ] && num='n'
-if [[ $num != 'n' ]]; then
+echo && read -p "是否捐赠作者?[y:是 n:退出脚本](默认:y)：" num
+[ -z $num ] && num='y'
+if [[ $num == 'y' ]]; then
 	donation_developer
 fi
