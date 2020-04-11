@@ -133,14 +133,15 @@ get_char(){
 	stty $SAVEDSTTY
 }
 install_v2ray(){
-	clear
 	$PM -y install jq curl
-	white_font '请先进入\c' && green_font 'https://my.zerotier.com/login\c' && white_font '注册账号并登录'
-	white_font '点击Networks————点击Creat a Network————点进新创建的Network(16位蓝色ID)'
+	clear
+	white_font '请先进入\c' && green_font 'https://my.zerotier.com/login\c' && white_font '注册账号并登录\n'
+	white_font '点击Networks————点击Creat a Network————点进新创建的Network(16位蓝色ID)\n'
 	white_font '完成操作后任意键继续...'
 	char=`get_char`
 	curl -s https://install.zerotier.com | sudo bash
-	white_font "找到Members————Manually Add Member————填入$(red_font $(zerotier-cli info|awk '{print $3}'))————点击Add New Member————勾选Auth?"
+	clear
+	white_font "找到Members————Manually Add Member————填入$(red_font `zerotier-cli info|awk '{print $3}'`)————点击Add New Member————勾选Auth?\n"
 	white_font '完成操作后任意键继续...'
 	char=`get_char`
 	read -p "请输入ZeroTier Network ID(开始的16位蓝色ID)：" netid
@@ -204,6 +205,7 @@ install_v2ray(){
 	line=$(grep -n '__str__(self)' $(cat v2raypath)|tail -1|awk -F ':' '{print $1}')
 	sed -i ''${line}'aself.ip = "'${ipinfo}'"' $(cat v2raypath)
 	sed -i 's#self.ip = "'${ipinfo}'"#        self.ip = "'${ipinfo}'"#g' $(cat v2raypath)
+	sed -i 's#ps": ".*"#ps": "胖波比"#g' $(cat v2raypath)
 	rm -f v2raypath
 	protocol=$(jq -r ".inbounds[0].streamSettings.network" /etc/v2ray/config.json)
 	cat /etc/v2ray/config.json | jq "del(.inbounds[0].streamSettings.${protocol}Settings[])" | jq '.inbounds[0].streamSettings.network="ws"' > /root/temp.json
