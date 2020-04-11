@@ -137,20 +137,19 @@ install_v2ray(){
 	clear && echo
 	white_font '请先进入\c' && green_font 'https://my.zerotier.com/login\c' && white_font '注册账号并登录\n'
 	white_font '点击Networks————点击Creat a Network————点进新创建的Network(16位蓝色ID)\n'
-	white_font '完成操作后任意键继续...\n'
+	white_font '完成操作后任意键继续...'
 	char=`get_char`
 	curl -s https://install.zerotier.com | sudo bash
-	clear && echo
-	read -p "请输入ZeroTier Network ID(开始的16位蓝色ID)：" netid
+	clear
+	white_font "\n找到Members————Manually Add Member————填入$(red_font `zerotier-cli info|awk '{print $3}'`)————点击Add New Member————勾选Auth?\n"
+	white_font '完成操作后任意键继续...'
+	char=`get_char`
+	echo && read -p "请输入ZeroTier Network ID(开始的16位蓝色ID)：" netid
 	zerotier-cli join $netid
-	white_font "\n刷新网页，Members项Address为$(red_font `zerotier-cli info|awk '{print $3}'`)的Last Seen为$(green_font 'ONLINE')则成功穿透"
-	white_font "记得要勾选$(red_font `zerotier-cli info|awk '{print $3}'`)的Auth?\n"
-
-	white_font 'Managed IPs项没有公网IP的话可以手动添加，或者刷新网页等待分配'
+	white_font "\n刷新网页，Members项Address为$(red_font `zerotier-cli info|awk '{print $3}'`)的Last Seen为$(green_font 'ONLINE')则成功穿透\n"
 	read -p "成功穿透则请输入ZeroTier分配的公网IP(Managed IPs)：" ipinfo
-	
 	echo -e "\n${Tip}要在什么设备上使用就在\c" && green_font 'https://www.zerotier.com/download/\c' && white_font '下载对应软件\n'
-	white_font '加入到\c' && red_font $netid && white_font '即可使用...'
+	white_font '与上面类似，Add New Member————加入到\c' && red_font $netid && white_font '即可使用...'
 	echo -e "${Info}任意键继续..."
 	char=`get_char`
 
