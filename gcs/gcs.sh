@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.2.1'
+sh_ver='1.2.2'
 green_font(){
 	echo -e "\033[32m\033[01m$1\033[0m\033[37m\033[01m$2\033[0m"
 }
@@ -102,8 +102,8 @@ fi
 if [[ $corn_path != "$(pwd)/temp" ]]; then
 	sed -i "/ssh -p ${ssh_port} root@${IP}/d" $corn_path
 fi
-read -p "请输入每 ? 分钟自动登录(默认:10)：" timer
-[ -z $timer ] && timer=10
+read -p "请输入每 ? 分钟自动登录(默认:8)：" timer
+[ -z $timer ] && timer=8
 echo "*/${timer} * * * *  ssh -p ${ssh_port} root@${IP}" >> $corn_path
 if [[ $corn_path == "$(pwd)/temp" ]]; then
 	crontab -u root $corn_path
@@ -150,7 +150,7 @@ install_v2ray(){
 	read -p "成功穿透则请输入ZeroTier分配的公网IP(Managed IPs)：" ipinfo
 	echo -e "${Tip}："
 	white_font '\n要在什么设备上使用就在\c' && green_font 'https://www.zerotier.com/download/\c' && white_font '下载对应软件\n'
-	white_font '与上面类似，安装后软件有一个Node ID，将这个Node ID填入Manually Add Member并且加入到\c' red_font $ipinfo && white_font '即可使用...'
+	white_font '与上面类似，安装后软件有一个Node ID，将这个Node ID填入Manually Add Member并且加入到\c' red_font $netid && white_font '即可使用...'
 	
 	v2ray_url='https://multi.netlify.com/v2ray.sh'
 	check_pip(){
