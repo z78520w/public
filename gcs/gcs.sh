@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.3.1'
+sh_ver='1.3.2'
 green_font(){
 	echo -e "\033[32m\033[01m$1\033[0m\033[37m\033[01m$2\033[0m"
 }
@@ -155,6 +155,7 @@ install_v2ray(){
 
 	clear
 	v2ray_url='https://multi.netlify.com/v2ray.sh'
+	bash <(curl -sL $v2ray_url) --remove
 	check_pip(){
 		if [[ ! `pip -V|awk -F '(' '{print $2}'` =~ 'python 3' ]]; then
 			pip_array=($(whereis pip|awk -F 'pip: ' '{print $2}'))
