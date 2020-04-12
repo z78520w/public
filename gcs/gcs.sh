@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.3.3'
+sh_ver='1.3.4'
 github='https://raw.githubusercontent.com/AmuyangA/public/master'
 new_ver=$(curl -s "${github}"/gcs/gcs.sh|grep 'sh_ver='|head -1|awk -F '=' '{print $2}'|sed $'s/\'//g')
 if [[ $sh_ver != "${new_ver}" ]]; then
@@ -135,6 +135,22 @@ get_char(){
 install_v2ray(){
 	$PM -y install jq curl lsof
 	clear && echo
+	kernel_version=`uname -r|awk -F "-" '{print $1}'`
+	if [[ `echo ${kernel_version}|awk -F '.' '{print $1}'` == '4' ]] && [[ `echo ${kernel_version}|awk -F '.' '{print $2}'` -ge 9 ]] || [[ `echo ${kernel_version}|awk -F '.' '{print $1}'` == '5' ]]; then
+		sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
+		sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
+		echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+		echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+		sysctl -p
+		clear && echo
+		white_font '已安装\c' && green_font 'BBR\c' && white_font '内核！BBR启动\c'
+		if [[ `lsmod|grep bbr|awk '{print $1}'` == 'tcp_bbr' ]]; then
+			green_font '成功！\n'
+		else
+			red_font '失败！\n'
+		fi
+	fi
+	
 	white_font '请先进入\c' && green_font 'https://my.zerotier.com/login\c' && white_font '注册账号并登录\n'
 	white_font '点击Networks————点击Creat a Network————点进新创建的Network(16位蓝色ID)\n'
 	white_font '完成操作后任意键继续...'
@@ -220,7 +236,7 @@ install_v2ray(){
 	v2ray restart
 	clear && v2ray info
 }
-echo && read -p "是否安装V2Ray并实现内网穿透?[y:是 n:下一步](默认:y)：" num
+echo && read -p "是否启动BBR，安装V2Ray并实现内网穿透?[y:是 n:下一步](默认:y)：" num
 [ -z $num ] && num='y'
 if [[ $num == 'y' ]]; then
 	install_v2ray
