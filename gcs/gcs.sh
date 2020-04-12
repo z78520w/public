@@ -157,7 +157,7 @@ install_v2ray(){
 	char=`get_char`
 	curl -s https://install.zerotier.com | sudo bash
 	clear
-	white_font "\n找到Members————Manually Add Member————填入$(red_font `zerotier-cli info|awk '{print $3}'`)————点击Add New Member————勾选Auth?\n"
+	white_font '\n找到Members————Manually Add Member————填入\c' && red_font "$(zerotier-cli info|awk '{print $3}')\c" && white_font '————点击Add New Member————勾选Auth?\n'
 	white_font '完成操作后任意键继续...'
 	char=`get_char`
 	echo && read -p "请输入ZeroTier Network ID(开始的16位蓝色ID)：" netid
