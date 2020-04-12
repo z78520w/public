@@ -3,7 +3,14 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.3.2'
+sh_ver='1.3.3'
+github='https://raw.githubusercontent.com/AmuyangA/public/master'
+new_ver=$(curl -s "${github}"/gcs/gcs.sh|grep 'sh_ver='|head -1|awk -F '=' '{print $2}'|sed $'s/\'//g')
+if [[ $sh_ver != "${new_ver}" ]]; then
+	wget -qO gcs.sh ${github}/gcs/gcs.sh
+	exec ./gcs.sh
+fi
+
 green_font(){
 	echo -e "\033[32m\033[01m$1\033[0m\033[37m\033[01m$2\033[0m"
 }
@@ -112,16 +119,9 @@ fi
 /etc/init.d/cron restart
 echo -e "${Info}自我唤醒的定时任务添加成功！！"
 
-github='https://raw.githubusercontent.com/AmuyangA/public/master'
 echo -e "\n${Info}如果您之前在 $(green_font 'https://ssh.cloud.google.com') 执行过此脚本"
 echo -e "${Info}那么以后再执行此脚本只需运行 $(red_font './gcs.sh') 即可，即使机器重置也不受影响"
 echo -e "${Tip}在其它机器定时唤醒此Shell：$(green_font 'wget -O gcs_k.sh '${github}'/gcs/gcs_k.sh && chmod +x gcs_k.sh && ./gcs_k.sh')"
-
-new_ver=$(curl -s "${github}"/gcs/gcs.sh|grep 'sh_ver='|head -1|awk -F '=' '{print $2}'|sed $'s/\'//g')
-if [[ $sh_ver != "${new_ver}" ]]; then
-	wget -qO gcs.sh ${github}/gcs/gcs.sh
-	echo -e "\n${Info}脚本已更新！可执行 $(red_font './gcs.sh') 来运行最新脚本..."
-fi
 
 get_char(){
 	SAVEDSTTY=`stty -g`
