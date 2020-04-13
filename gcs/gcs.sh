@@ -165,7 +165,7 @@ install_v2ray(){
 	white_font "\n刷新网页，Members项Address为$(red_font `zerotier-cli info|awk '{print $3}'`)的Last Seen为$(green_font 'ONLINE')则成功穿透\n"
 	read -p "成功穿透则请输入ZeroTier分配的公网IP(Managed IPs)：" ipinfo
 	echo -e "\n${Tip}要在什么设备上使用就在\c" && green_font 'https://www.zerotier.com/download/\c' && white_font '下载对应软件'
-	white_font '与上面类似，Add New Member————加入到\c' && red_font $netid && white_font '即可使用...\n'
+	white_font '与上面类似，Add New Member————加入到\c' && red_font "${netid}\c" && white_font '，即可使用...\n'
 	echo -e "${Info}任意键继续..."
 	char=`get_char`
 
