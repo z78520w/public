@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.4.0'
+sh_ver='1.4.1'
 github='https://raw.githubusercontent.com/AmuyangA/public/master'
 new_ver=$(curl -s "${github}"/gcs/gcs.sh|grep 'sh_ver='|head -1|awk -F '=' '{print $2}'|sed $'s/\'//g')
 if [[ $sh_ver != "${new_ver}" ]]; then
@@ -149,6 +149,7 @@ install_v2ray(){
 		else
 			red_font '失败！\n'
 		fi
+		sleep 1s
 	fi
 
 	clear
@@ -207,10 +208,12 @@ install_v2ray(){
 	bash <(curl -sL $v2ray_url) --zh
 	find /usr/local/lib/python*/*-packages/v2ray_util -name group.py > v2raypath
 	sed -i 's#ps": ".*"#ps": "胖波比"#g' $(cat v2raypath)
+	
 	protocol=$(jq -r ".inbounds[0].streamSettings.network" /etc/v2ray/config.json)
 	cat /etc/v2ray/config.json |jq "del(.inbounds[0].streamSettings.${protocol}Settings[])" |jq '.inbounds[0].streamSettings.network="ws"' > /root/temp.json
 	temppath="/$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 8)/"
 	cat /root/temp.json |jq '.inbounds[0].streamSettings.wsSettings.path="'${temppath}'"' |jq '.inbounds[0].streamSettings.wsSettings.headers.Host="www.bilibili.com"' > /etc/v2ray/config.json
+	
 	kill $(lsof -i:22|grep LISTEN|awk '{print$2}'|uniq)
 	echo 22|v2ray port
 	line=$(grep -n '__str__(self)' $(cat v2raypath)|tail -1|awk -F ':' '{print $1}')
@@ -220,7 +223,7 @@ install_v2ray(){
 	clear && v2ray info
 	echo -e "${Tip}请务必记录以上信息，因为关闭SSH后你再也看不到它了！"
 }
-echo -e "\n{Tip}安装直连V2Ray之后，GCS将无法再进行SSH连接！" 
+echo -e "\n${Tip}安装直连V2Ray之后，GCS将无法再进行SSH连接！"
 read -p "是否启动BBR，安装6000端口直连V2Ray?[y:是 n:下一步](默认:y)：" num
 [ -z $num ] && num='y'
 if [[ $num == 'y' ]]; then
