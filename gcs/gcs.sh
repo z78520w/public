@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.4.1'
+sh_ver='1.4.2'
 github='https://raw.githubusercontent.com/AmuyangA/public/master'
 new_ver=$(curl -s "${github}"/gcs/gcs.sh|grep 'sh_ver='|head -1|awk -F '=' '{print $2}'|sed $'s/\'//g')
 if [[ $sh_ver != "${new_ver}" ]]; then
@@ -123,15 +123,6 @@ echo -e "\n${Info}如果您之前在 $(green_font 'https://ssh.cloud.google.com'
 echo -e "${Info}那么以后再执行此脚本只需运行 $(red_font './gcs.sh') 即可，即使机器重置也不受影响"
 echo -e "${Tip}在其它机器定时唤醒此Shell：$(green_font 'wget -O gcs_k.sh '${github}'/gcs/gcs_k.sh && chmod +x gcs_k.sh && ./gcs_k.sh')"
 
-get_char(){
-	SAVEDSTTY=`stty -g`
-	stty -echo
-	stty cbreak
-	dd if=/dev/tty bs=1 count=1 2> /dev/null
-	stty -raw
-	stty echo
-	stty $SAVEDSTTY
-}
 install_v2ray(){
 	$PM -y install jq curl lsof
 	clear && echo
@@ -214,8 +205,13 @@ install_v2ray(){
 	temppath="/$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 8)/"
 	cat /root/temp.json |jq '.inbounds[0].streamSettings.wsSettings.path="'${temppath}'"' |jq '.inbounds[0].streamSettings.wsSettings.headers.Host="www.bilibili.com"' > /etc/v2ray/config.json
 	
-	kill $(lsof -i:22|grep LISTEN|awk '{print$2}'|uniq)
+	pid_array=($(lsof -i:22|grep LISTEN|awk '{print$2}'|uniq))
+	for node in ${pid_array[@]};
+	do
+		kill $node
+	done
 	echo 22|v2ray port
+	
 	line=$(grep -n '__str__(self)' $(cat v2raypath)|tail -1|awk -F ':' '{print $1}')
 	sed -i ''${line}'aself.port = "6000"' $(cat v2raypath)
 	sed -i 's#self.port = "6000"#        self.port = "6000"#g' $(cat v2raypath)
