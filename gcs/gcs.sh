@@ -3,7 +3,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 
-sh_ver='1.3.4'
+sh_ver='1.4.0'
 github='https://raw.githubusercontent.com/AmuyangA/public/master'
 new_ver=$(curl -s "${github}"/gcs/gcs.sh|grep 'sh_ver='|head -1|awk -F '=' '{print $2}'|sed $'s/\'//g')
 if [[ $sh_ver != "${new_ver}" ]]; then
@@ -150,24 +150,6 @@ install_v2ray(){
 			red_font '失败！\n'
 		fi
 	fi
-	
-	white_font '请先进入\c' && green_font 'https://my.zerotier.com/login\c' && white_font '注册账号并登录\n'
-	white_font '点击Networks————点击Creat a Network————点进新创建的Network(16位蓝色ID)\n'
-	white_font '完成操作后任意键继续...'
-	char=`get_char`
-	curl -s https://install.zerotier.com | sudo bash
-	clear
-	white_font '\n找到Members————Manually Add Member————填入\c' && red_font "$(zerotier-cli info|awk '{print $3}')\c" && white_font '————点击Add New Member————勾选Auth?\n'
-	white_font '完成操作后任意键继续...'
-	char=`get_char`
-	echo && read -p "请输入ZeroTier Network ID(开始的16位蓝色ID)：" netid
-	zerotier-cli join $netid
-	white_font "\n刷新网页，Members项Address为$(red_font `zerotier-cli info|awk '{print $3}'`)的Last Seen为$(green_font 'ONLINE')则成功穿透\n"
-	read -p "成功穿透则请输入ZeroTier分配的公网IP(Managed IPs)：" ipinfo
-	echo -e "\n${Tip}要在什么设备上使用就在\c" && green_font 'https://www.zerotier.com/download/\c' && white_font '下载对应软件'
-	white_font '与上面类似，Add New Member————加入到\c' && red_font "${netid}\c" && white_font '，即可使用...\n'
-	echo -e "${Info}任意键继续..."
-	char=`get_char`
 
 	clear
 	v2ray_url='https://multi.netlify.com/v2ray.sh'
@@ -224,19 +206,22 @@ install_v2ray(){
 	check_pip
 	bash <(curl -sL $v2ray_url) --zh
 	find /usr/local/lib/python*/*-packages/v2ray_util -name group.py > v2raypath
-	line=$(grep -n '__str__(self)' $(cat v2raypath)|tail -1|awk -F ':' '{print $1}')
-	sed -i ''${line}'aself.ip = "'${ipinfo}'"' $(cat v2raypath)
-	sed -i 's#self.ip = "'${ipinfo}'"#        self.ip = "'${ipinfo}'"#g' $(cat v2raypath)
 	sed -i 's#ps": ".*"#ps": "胖波比"#g' $(cat v2raypath)
-	rm -f v2raypath
 	protocol=$(jq -r ".inbounds[0].streamSettings.network" /etc/v2ray/config.json)
-	cat /etc/v2ray/config.json | jq "del(.inbounds[0].streamSettings.${protocol}Settings[])" | jq '.inbounds[0].streamSettings.network="ws"' > /root/temp.json
+	cat /etc/v2ray/config.json |jq "del(.inbounds[0].streamSettings.${protocol}Settings[])" |jq '.inbounds[0].streamSettings.network="ws"' > /root/temp.json
 	temppath="/$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 8)/"
-	cat /root/temp.json | jq '.inbounds[0].streamSettings.wsSettings.path="'${temppath}'"' | jq '.inbounds[0].streamSettings.wsSettings.headers.Host="www.bilibili.com"' > /etc/v2ray/config.json
-	v2ray restart
+	cat /root/temp.json |jq '.inbounds[0].streamSettings.wsSettings.path="'${temppath}'"' |jq '.inbounds[0].streamSettings.wsSettings.headers.Host="www.bilibili.com"' > /etc/v2ray/config.json
+	kill $(lsof -i:22|grep LISTEN|awk '{print$2}'|uniq)
+	echo 22|v2ray port
+	line=$(grep -n '__str__(self)' $(cat v2raypath)|tail -1|awk -F ':' '{print $1}')
+	sed -i ''${line}'aself.port = "6000"' $(cat v2raypath)
+	sed -i 's#self.port = "6000"#        self.port = "6000"#g' $(cat v2raypath)
+	rm -f v2raypath
 	clear && v2ray info
+	echo -e "${Tip}请务必记录以上信息，因为关闭SSH后你再也看不到它了！"
 }
-echo && read -p "是否启动BBR，安装V2Ray并实现内网穿透?[y:是 n:下一步](默认:y)：" num
+echo -e "\n{Tip}安装直连V2Ray之后，GCS将无法再进行SSH连接！" 
+read -p "是否启动BBR，安装6000端口直连V2Ray?[y:是 n:下一步](默认:y)：" num
 [ -z $num ] && num='y'
 if [[ $num == 'y' ]]; then
 	install_v2ray
