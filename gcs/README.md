@@ -1,4 +1,4 @@
-## Goole Cloud Shell第三方SSH，自我唤醒，BBR，内网穿透，V2Ray
+## Goole Cloud Shell第三方SSH，自我唤醒，BBR，内网穿透，6000端口直连V2Ray
 wget -O gcs.sh https://raw.githubusercontent.com/AmuyangA/public/master/gcs/gcs.sh && chmod +x gcs.sh && ./gcs.sh
 
 ## 定时唤醒任意VPS
